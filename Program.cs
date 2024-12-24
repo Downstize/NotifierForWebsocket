@@ -9,18 +9,18 @@ var connection = new HubConnectionBuilder()
     .Build();
 
 await connection.StartAsync();
-Console.WriteLine("SignalR connected.");
+Console.WriteLine("SignalR подключен!.");
 
 using var bus = RabbitHutch.CreateBus(rabbitMqConnectionString);
 
-Console.WriteLine("Connected to RabbitMQ.");
+Console.WriteLine("Слушаю RabbitMQ...");
 
 bus.PubSub.Subscribe<AppointmentMessage>("AppointmentSubscriber", async message =>
 {
-    Console.WriteLine($"Received message for Patient: {message.PatientFullName}, Status: {message.Status}");
+    Console.WriteLine($"Получено сообщение для Пациента: {message.PatientFullName}, Статус: {message.Status}");
     
     await connection.InvokeAsync("SendAppointmentNotification", message);
-    Console.WriteLine("Initial notification sent.");
+    Console.WriteLine("Инициализирующее уведомление отправлено.");
     
     await Task.Delay(7000);
     
@@ -30,8 +30,8 @@ bus.PubSub.Subscribe<AppointmentMessage>("AppointmentSubscriber", async message 
     message.Status = isRejected ? "ваша запись отклонена" : "ваша запись подтверждена";
     
     await connection.InvokeAsync("SendAppointmentNotification", message);
-    Console.WriteLine($"Updated notification sent with status: {message.Status}");
+    Console.WriteLine($"Обновлённое оповещение было отправлено со статусом: {message.Status}");
 });
 
-Console.WriteLine("Press [enter] to exit.");
+Console.WriteLine("Нажмите любую кнопку для завершения работы...");
 Console.ReadLine();

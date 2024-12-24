@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Статус записи</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f4f4f9;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        #notifications {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 300px;
+        }
+
+        .notification {
+            background: linear-gradient(135deg, #007BFF, #0056b3);
+            color: white;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            opacity: 1;
+            font-size: 14px;
+            font-weight: 500;
+            animation: slide-in 0.5s ease-out;
+            transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+        }
+
+        .notification strong {
+            font-weight: bold;
+        }
+
+        .fade-out {
+            opacity: 0;
+            transform: translateX(50px);
+        }
+
+        @keyframes slide-in {
+            from {
+                transform: translateX(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+</style>
+</head>
+
+<body>
+    <h1>Отображение статуса записи</h1>
+    <div id="notifications"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.3/signalr.min.js" crossorigin="anonymous"
+        referrerpolicy="no-referrer"></script>
+    <script>
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("https://localhost:7049/appointmenthub")
+            .build();
+
+        connection.start()
+            .then(() => {
+                console.log("SignalR подключен!");
+            })
+            .catch(err => {
+                alert("Не удалось подключить SignalR: " + err);
+            });
+
+        let lastNotificationTime = 0; 
+
+        connection.on("ReceiveAppMessage", (data) => {
+    console.log("Получено сообщение:", data);
+
+    if (data && data.user && data.message) {
+        const { user, message } = data;
+        const currentTime = Date.now(); 
+        const timeDiff = currentTime - lastNotificationTime;
+
+        if (timeDiff >= 5000) {
+            showNotification(user, message);
+            lastNotificationTime = currentTime;
+        }
+    } else {
+        console.warn("Неправильный формат сообщения:", data);
+    }
+});
+
+function showNotification(user, message) {
+    const notificationsContainer = document.getElementById("notifications");
+
+    const notification = document.createElement("div");
+    notification.classList.add("notification");
+
+    notification.innerHTML = `<strong>${user}</strong>: ${message}`;
+
+    notificationsContainer.appendChild(notification);
+
+    setTimeout(() => {
+        notification.classList.add("fade-out");
+    }, 5000);
+
+    setTimeout(() => {
+        notificationsContainer.removeChild(notification);
+    }, 6000);
+}
+    </script>
+</body>
+
+</html>
